@@ -1,36 +1,62 @@
 <?php
 
-// file for
-// reading: logs.txt
-// writing: output.txt
+$logpath    = __DIR__.'/logs.txt';
+$outputpath = __DIR__.'/output.txt';
 
-// 1st step
-// stream the reading file, 8KB at a time
-// format each row into <UserID>|<BytesTX|<BytesRX|<DateTime>|<ID>
-// append to writing file
-// store in array for 2nd step
-// repeat
+$logfile = fopen($logpath, 'r');
 
-// add a breakline to the file
+$ids     = [];
+$userids = [];
+$pipes   = [];
 
-// 2nd step
-// perform bubble sort of the IDs and store in array
-// loop through the sorted array and append to the writing file
+while (! feof($logfile)) {
+    while(($line = fgets($logfile)) !== false) {
+        $id       = trim(substr($line, 0, 12));
+        $userid   = trim(substr($line, 12, 6));
+        $bytestx  = trim(substr($line, 18, 8));
+        $bytesrx  = trim(substr($line, 26, 8));
+        $datetime = trim(substr($line, 34, 16));
 
-// add a breakline to the file
+        $bytestx  = number_format((int) $bytestx);
+        $bytesrx  = number_format((int) $bytesrx);
+        $datetime = DateTime::createFromFormat('Y-m-d H:i', $datetime)->format('D, F, d Y, H:i:00');
 
-// 3rd step
-// perform bubble sort of the UserIDs and store in array
-// loop through the sorted array and append to the writing file
-
-$path = __DIR__.'/logs.txt';
-
-if (! file_exists($path)) die('File not found!');
-
-$file = fopen($path, 'rb');
-
-while (! feof($file)) {
-    var_dump(fread($file, 8192));
+        $pipes[]   = sprintf('%s|%s|%s|%s|%s', $userid, $bytestx, $bytesrx, $datetime, $id);
+        $ids[]     = $id;
+        $userids[] = $userid;
+    }
 }
 
-fclose($file);
+fclose($logfile);
+
+natcasesort($ids);
+$sortedids = array_values($ids);
+
+$uuids = array_unique($userids);
+sort($uuids, SORT_STRING | SORT_NATURAL | SORT_FLAG_CASE);
+
+$outputfile = fopen($outputpath, 'w');
+
+foreach ($pipes as $pipe) {
+    fwrite($outputfile, $pipe.PHP_EOL);
+}
+
+fwrite($outputfile, PHP_EOL);
+
+foreach ($sortedids as $id) {
+    fwrite($outputfile, $id.PHP_EOL);
+}
+
+fwrite($outputfile, PHP_EOL);
+
+foreach ($uuids as $index => $uuid) {
+    $index += 1;
+    $appends = "[$index]$uuid";
+    fwrite($outputfile, $appends.PHP_EOL);
+}
+
+fclose($outputfile);
+
+$cono = sprintf("\n%s: %s%s\n", 'File processed successfully', "\033[34m\e[4m", $outputpath);
+
+exit($cono);
