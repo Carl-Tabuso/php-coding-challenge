@@ -5,7 +5,7 @@
 // writing: output.txt
 
 // 1st step
-// stream the reading file, 10KB at a time
+// stream the reading file, 8KB at a time
 // format each row into <UserID>|<BytesTX|<BytesRX|<DateTime>|<ID>
 // append to writing file
 // store in array for 2nd step
@@ -28,8 +28,9 @@ $path = __DIR__.'/logs.txt';
 if (! file_exists($path)) die('File not found!');
 
 $file = fopen($path, 'rb');
-var_dump($file);
 
 while (! feof($file)) {
-    var_dump(fread($file, 10240));
+    var_dump(fread($file, 8192));
 }
+
+fclose($file);
